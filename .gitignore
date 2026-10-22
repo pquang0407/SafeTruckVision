@@ -1,0 +1,23 @@
+# Bỏ qua weights và model YOLO
+*.pt
+*.onnx
+
+# Bỏ qua thư mục kết quả huấn luyện
+runs/
+src/runs/
+
+# Bỏ qua ảnh và video thử nghiệm
+*.jpg
+*.png
+*.mp4
+videos/
+
+# Bỏ qua dữ liệu & file nén
+data/
+*.zip
+
+# Bỏ qua cache & môi trường
+__pycache__/
+*.pyc
+venv/
+.venv/
