@@ -1,23 +1,25 @@
-# Bỏ qua weights và model YOLO
+# Bo qua weights va model YOLO
 *.pt
 *.onnx
 
-# Bỏ qua thư mục kết quả huấn luyện
+# Bo qua thu muc ket qua huan luyen
 runs/
 src/runs/
 
-# Bỏ qua ảnh và video thử nghiệm
-*.jpg
-*.png
+# Bo qua video thu nghiem
 *.mp4
 videos/
 
-# Bỏ qua dữ liệu & file nén
+# Bo qua du lieu & file nen
 data/
 *.zip
 
-# Bỏ qua cache & môi trường
+# Bo qua cache & moi truong
 __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Ngoai le: Cho phep cac anh tai lieu va minh chung trong docs/
+!docs/images/*.png
+!docs/images/*.jpg
