@@ -2,7 +2,7 @@
 
 # SafeTruckVision: Hệ Thống Thị Giác Máy Tính Giám Sát và Cảnh Báo Điểm Mù Xe Tải Thời Gian Thực
 
-**Hệ thống Nhận diện Điểm Mù Xe tải ứng dụng Mô hình Ultralytics YOLO & Phân tích Đa Vùng ROI Hướng Không Gian 3D**
+**Hệ thống Nhận diện Điểm Mù Xe tải ứng dụng Mô hình Ultralytics YOLOv26 & Phân tích Đa Vùng ROI Hướng Không Gian 3D**
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
@@ -23,54 +23,73 @@
 
 Tai nạn giao thông liên quan đến xe tải và xe siêu trường, siêu trọng phần lớn bắt nguồn từ **hiện tượng điểm mù (Blind Spots)** — những vùng không gian xung quanh xe mà tài xế hoàn toàn không thể quan sát trực tiếp qua gương chiếu hậu hoặc kính chắn gió.
 
-**SafeTruckVision** là giải pháp thị giác máy tính thông minh kết hợp mạng học sâu nhận diện đối tượng (**Ultralytics YOLO**) với kỹ thuật **chiếu phối cảnh đa vùng (Perspective Projection / Homography)** nhằm:
+**SafeTruckVision** là giải pháp thị giác máy tính thông minh kết hợp mạng học sâu nhận diện đối tượng thế hệ mới (**Ultralytics YOLO**) với kỹ thuật **chiếu phối cảnh đa vùng (Perspective Projection / Homography)** nhằm:
 1. Phát hiện và phân loại tức thời các đối tượng giao thông xung quanh xe tải (Người đi bộ, xe máy, xe đạp, ô tô con).
 2. Thiết lập động các vùng cảnh báo nguy hiểm (**ROI - Region of Interest**) theo từng góc nhìn: Phía trước (Front), Bên hông (Side - Điểm mù nguy hiểm nhất) và Phía sau (Rear).
 3. Đưa ra tín hiệu cảnh báo va chạm theo thời gian thực (Real-time Blind Spot Collision Warning) với độ trễ thấp phù hợp triển khai trên thiết bị biên (Edge AI / Cabin xe tải).
 
 ---
 
-## 🏗️ 2. KIẾN TRÚC HỆ THỐNG VÀ LUỒNG XỬ LÝ (PIPELINE)
+## 🏗️ 2. KIẾN TRÚC MÔ HÌNH VÀ LUỒNG XỬ LÝ (PIPELINE)
 
-```text
-  [ Camera góc rộng / Video Stream Cabin Xe Tải ]
-                         │
-                         ▼
-     ┌────────────────────────────────────────┐
-     │          Pre-processing Unit           │ Trích xuất khung hình, chuẩn hóa kích thước
-     └───────────────────┬────────────────────┘
-                         │
-                         ▼
-     ┌────────────────────────────────────────┐
-     │        Object Detection Engine         │
-     │      (Ultralytics YOLO Framework)      │ Dự đoán Bounding Box, Class & Confidence
-     └───────────────────┬────────────────────┘
-                         │
-                         ▼
-     ┌────────────────────────────────────────┐
-     │       Bottom-Center Footprint Point    │ Tính toán tọa độ tiếp đất của bánh xe/chân đối tượng
-     └───────────────────┬────────────────────┘
-                         │
-                         ▼
-     ┌────────────────────────────────────────┐
-     │        Polygon ROI Analysis Engine     │ 
-     │       (Point-in-Polygon Algorithm)     │ Xác định đối tượng nằm trong Vùng Nguy hiểm hay Vùng Cảnh báo
-     └───────────────────┬────────────────────┘
-                         │
-                         ▼
-     ┌────────────────────────────────────────┐
-     │       Real-time Collision Warning      │ Kích hoạt còi/đèn cảnh báo tài xế & Hiển thị trực quan HUD
-     └────────────────────────────────────────┘
-```
+### 2.1. Sơ đồ kiến trúc tổng quát của mô hình Ultralytics YOLO
+Mô hình được tối ưu hóa luồng trích xuất đặc trưng đa quy mô giúp nhận diện các vật thể nhỏ (người đi bộ, xe máy) di chuyển sát thành xe tải:
+
+<div align="center">
+  <img src="./docs/images/image9.png" alt="Sơ đồ kiến trúc tổng quát của mô hình Ultralytics YOLO" width="90%">
+  <p><em>Hình 2.1 – Sơ đồ kiến trúc tổng quát của mô hình Ultralytics YOLO.</em></p>
+</div>
+
+### 2.2. So sánh luồng xử lý (Pipeline) giữa YOLO truyền thống và Kiến trúc Đề xuất
+Loại bỏ các khâu trung gian cồng kềnh, tối ưu hóa độ trễ đầu-cuối (End-to-End Latency) cho phép xử lý trực tiếp trên khung hình video luồng:
+
+<div align="center">
+  <img src="./docs/images/image1.png" alt="So sánh luồng xử lý Pipeline" width="85%">
+  <p><em>Hình 2.2 – So sánh luồng xử lý (Pipeline) giữa YOLO truyền thống và kiến trúc thế hệ mới.</em></p>
+</div>
 
 ---
 
-## 📂 3. CẤU TRÚC THƯ MỤC DỰ ÁN
+## 📸 3. KẾT QUẢ THỰC NGHIỆM VÀ DEMO NHẬN DIỆN THỰC TẾ
+
+### 3.1. Dữ liệu gán nhãn thực tế từ góc nhìn Cabin Xe tải
+Tập dữ liệu được gán nhãn chi tiết từ góc nhìn thực tế của camera gắn bên hông và phía trước xe tải, mô phỏng chính xác điều kiện giao thông phức tạp tại Việt Nam:
+
+<div align="center">
+  <img src="./docs/images/image6.jpg" alt="Dữ liệu gán nhãn thực tế" width="85%">
+  <p><em>Hình 3.1 – Mẫu gán nhãn dữ liệu thực tế tại các điểm mù xung quanh xe tải.</em></p>
+</div>
+
+### 3.2. Kết quả nhận diện đối tượng trong vùng nguy hiểm
+Mô hình phát hiện chính xác người điều khiển xe máy, người đi bộ trong điều kiện ánh sáng thực tế và môi trường giao thông đô thị đông đúc:
+
+<div align="center">
+  <img src="./docs/images/image8.jpg" alt="Mô hình nhận diện chính xác" width="85%">
+  <p><em>Hình 3.2 – Kết quả nhận diện chính xác đối tượng xe máy và người đi bộ di chuyển cạnh thân xe.</em></p>
+</div>
+
+<div align="center">
+  <img src="./docs/images/image4.png" alt="Kết quả nhận diện thực tế đa vật thể" width="85%">
+  <p><em>Hình 3.3 – Kết quả nhận diện thực tế đa vật thể đồng thời trong luồng giám sát camera.</em></p>
+</div>
+
+### 3.3. Đánh giá hiệu năng và thời gian suy luận (Latency vs. mAP)
+Đánh giá so sánh trực tiếp độ trễ và độ chính xác mAP giữa mô hình đề xuất và các phiên bản tiền nhiệm:
+
+<div align="center">
+  <img src="./docs/images/image5.jpg" alt="So sánh hiệu năng mAP và Độ trễ" width="85%">
+  <p><em>Hình 3.4 – Biểu đồ so sánh hiệu năng (Độ trễ và mAP) giữa mô hình thế hệ mới và các thế hệ trước.</em></p>
+</div>
+
+---
+
+## 📂 4. CẤU TRÚC THƯ MỤC DỰ ÁN
 
 ```text
 SafeTruckVision/
 ├── docs/                                      # Tài liệu & Báo cáo nghiên cứu khoa học học thuật
-│   └── Bao_Cao_NCKH_SafeTruckVision.docx      # Bản báo cáo nghiên cứu chi tiết nộp Hội đồng NCKH
+│   ├── Bao_Cao_NCKH_SafeTruckVision.docx      # Bản báo cáo nghiên cứu chi tiết nộp Hội đồng NCKH
+│   └── images/                                # Tập hợp toàn bộ sơ đồ kiến trúc & ảnh demo thực nghiệm
 ├── src/                                       # Mã nguồn lõi của hệ thống
 │   ├── configs/                               
 │   │   └── roi_definitions.json               # Cấu hình đa giác các vùng điểm mù nguy hiểm (ROI)
@@ -89,9 +108,9 @@ SafeTruckVision/
 
 ---
 
-## 🚀 4. HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY THỰC NGHIỆM
+## 🚀 5. HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY THỰC NGHIỆM
 
-### 4.1. Cài đặt môi trường
+### 5.1. Cài đặt môi trường
 ```bash
 # Clone kho lưu trữ
 git clone https://github.com/pquang0407/SafeTruckVision.git
@@ -106,19 +125,19 @@ source venv/bin/activate  # Trên Linux/macOS
 pip install -r requirements.txt
 ```
 
-### 4.2. Chạy demo phát hiện điểm mù trên video/webcam
+### 5.2. Chạy demo phát hiện điểm mù trên video/webcam
 ```bash
 python src/inference/run_demo.py --source data/test_video.mp4 --weights weights/best.pt
 ```
 
-### 4.3. Huấn luyện lại mô hình (Re-training)
+### 5.3. Huấn luyện lại mô hình (Re-training)
 ```bash
 python src/training/train.py --data configs/dataset.yaml --epochs 100 --imgsz 640 --batch 16
 ```
 
 ---
 
-## 👥 5. NHÓM TÁC GIẢ & VAI TRÒ THỰC HIỆN
+## 👥 6. NHÓM TÁC GIẢ & VAI TRÒ THỰC HIỆN
 
 Đề tài Nghiên cứu Khoa học Sinh viên được bảo vệ thành công trước Hội đồng Khoa học Khoa Công nghệ Thông tin – Trường Đại học Thủy Lợi (Phân hiệu TP. Hồ Chí Minh):
 
